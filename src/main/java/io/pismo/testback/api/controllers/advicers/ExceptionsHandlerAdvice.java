@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import io.pismo.testback.exceptions.DependencyNotFoundException;
+
 /**
  * @author victormartins
  *
@@ -37,6 +39,12 @@ public class ExceptionsHandlerAdvice {
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ExceptionHandler(NoSuchElementException.class)
 	public String handleValidationNoSuchElementException(NoSuchElementException ex) {
+		return ex.getMessage();
+	}
+	
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(DependencyNotFoundException.class)
+	public String handleValidationDependencyNotFoundException(DependencyNotFoundException ex) {
 		return ex.getMessage();
 	}
 }
