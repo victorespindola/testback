@@ -1,0 +1,18 @@
+version: "3.3"
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "db"
+    command: sh -c "/wait-for-it.sh db:3306 -- echo foi"     
+     
+
+  db:
+    image: mysql/mysql-server:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: admin876
+      MYSQL_DATABASE: pismo
+      MYSQL_USER: pismo_usr_1
+      MYSQL_PASSWORD: 123456
