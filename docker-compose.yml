@@ -6,7 +6,7 @@ services:
       - "8080:8080"
     depends_on:
       - "db"
-    command: sh -c "/wait-for-it.sh db:3306 -- echo foi"     
+    command: sh -c "./wait-for-it.sh db:3306 -t 30"
      
 
   db:

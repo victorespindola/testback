@@ -23,7 +23,6 @@ import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.exceptions.DependencyNotFoundException;
 import io.pismo.testback.model.Transaction;
 import io.pismo.testback.services.transaction.CreateNewTransactionService;
-import io.pismo.testback.web.controllers.TransactionsController;
 
 /**
  * @author victormartins

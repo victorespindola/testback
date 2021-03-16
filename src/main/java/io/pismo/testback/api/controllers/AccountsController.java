@@ -20,6 +20,8 @@ import io.pismo.testback.api.requests.account.NewAccountRequest;
 import io.pismo.testback.api.responses.account.AccountResponse;
 import io.pismo.testback.model.Account;
 import io.pismo.testback.repositories.AccountsRepository;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 /**
  * @author victormartins
@@ -27,16 +29,19 @@ import io.pismo.testback.repositories.AccountsRepository;
  */
 @RestController
 @RequestMapping("/api/accounts")
+@Api("Accounts")
 public class AccountsController {
 	
 	@Autowired
 	private AccountsRepository accountsRepository;
 	
+	@ApiOperation(value = "Finds accounts by id.")
 	@GetMapping("/{id}")	
 	public AccountResponse get(@PathVariable Long id) {
 		return new AccountResponse(accountsRepository.findById(id).get());
 	}
 	
+	@ApiOperation(value = "Creates new accounts.")
 	@PostMapping
 	public ResponseEntity<AccountResponse> create(@Valid @RequestBody NewAccountRequest newAccountRequest) {
 		Account accountCreated = this.accountsRepository.save(newAccountRequest.asAccount());
