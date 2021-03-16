@@ -5,9 +5,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - "db"
-    command: ["sh", "-c", "./wait-for-it.sh", "db:3306", "-t", "30"]
-     
+      - "db"    
 
   db:
     image: mysql/mysql-server:latest
@@ -16,3 +14,8 @@ services:
       MYSQL_DATABASE: pismo
       MYSQL_USER: pismo_usr_1
       MYSQL_PASSWORD: 123456
+    healthcheck:
+      test: "mysql status"
+      interval: 1s
+      retries: 120  
+    
