@@ -3,6 +3,7 @@
  */
 package io.pismo.testback.services.transaction;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
+import io.pismo.testback.exceptions.DependencyNotFoundException;
 import io.pismo.testback.model.Account;
 import io.pismo.testback.model.Transaction;
 import io.pismo.testback.model.operations.Operation;
@@ -43,6 +45,11 @@ public class CreateNewTransactionService {
 		Optional<Account> account = accountsRepository.findById(request.getAccountId());
 		Optional<Operation> operation = operationsRepository.findById(request.getOperationTypeId());
 		
-		return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount()));
+		try {
+			return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount()));
+		}
+		catch (NoSuchElementException e) {
+			throw new DependencyNotFoundException(e);
+		}
 	}
 }
