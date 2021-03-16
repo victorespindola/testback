@@ -7,7 +7,7 @@ ARG MAVEN_BIN_URL=https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/bi
 RUN mkdir /opt/app
 WORKDIR /opt/app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl bash    
 
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
  && curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_BIN_URL} \
@@ -18,8 +18,17 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 
+COPY wait.sh /usr/bin/wait.sh
+RUN chmod +x /usr/bin/wait.sh
+
+COPY exec.sh .
+RUN chmod +x exec.sh
+
 COPY . .
+
 RUN mvn clean package
+RUN pwd
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "./target/testback-1.0.jar"]
+ENTRYPOINT ["/bin/sh"]
+CMD ["./exec.sh"]

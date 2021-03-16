@@ -13,9 +13,4 @@ services:
       MYSQL_ROOT_PASSWORD: admin876
       MYSQL_DATABASE: pismo
       MYSQL_USER: pismo_usr_1
-      MYSQL_PASSWORD: 123456
-    healthcheck:
-      test: "mysql status"
-      interval: 1s
-      retries: 120  
-    
+      MYSQL_PASSWORD: 123456    
