@@ -14,6 +14,8 @@ import javax.validation.constraints.NotBlank;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import io.pismo.testback.exceptions.TransactionAmountGreaterThanLimitException;
+
 /**
  * @author victormartins
  *
@@ -31,8 +33,20 @@ public class Account {
 	@Column(nullable = false, length = 50)
 	private String document;
 
+	@Column
+	private Double limitValue;
+
+	
+	
 	public Account() {
 		super();
+	}
+
+	public Account(Long id, String document, Double limit) {
+		super();
+		this.id = id;
+		this.document = document;
+		this.limitValue = limit;
 	}
 
 	public Account(Long id, String document) {
@@ -41,9 +55,10 @@ public class Account {
 		this.document = document;
 	}
 	
-	public Account(String document) {
+	public Account(String document, Double limit) {
 		super();
 		this.document = document;
+		this.limitValue = limit;
 	}
 
 	public Long getId() {
@@ -76,5 +91,22 @@ public class Account {
 	@Override
 	public String toString() {
 		return this.document;
+	}
+
+	public boolean isGreaterThanLimit(double amount) {
+		return this.limitValue + amount < 0.0;
+	}
+
+	public Account updateLimit(double amount) {
+		if(this.isGreaterThanLimit(amount)) {
+			throw new TransactionAmountGreaterThanLimitException("Amount is greater than available limit.");
+		}
+
+		this.limitValue = this.limitValue + amount;
+		return this;
+	}
+
+	public Double getLimit() {
+		return this.limitValue;
 	}
 }

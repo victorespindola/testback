@@ -18,15 +18,19 @@ public class AccountResponse {
 	
 	@JsonProperty(value = "document_number")
 	private String documentNumber;
+	
+	@JsonProperty(value = "limit")
+	private Double limit;
 
-	public AccountResponse(Long accountId, String documentNumber) {
+	public AccountResponse(Long accountId, String documentNumber, Double limit) {
 		super();
 		this.accountId = accountId;
 		this.documentNumber = documentNumber;
+		this.limit = limit;
 	}
 	
 	public AccountResponse(Account account) {
-		this(account.getId(), String.valueOf(account.getDocument()));
+		this(account.getId(), String.valueOf(account.getDocument()), account.getLimit());
 	}
 
 	public Long getAccountId() {

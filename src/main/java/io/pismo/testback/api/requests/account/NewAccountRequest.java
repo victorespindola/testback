@@ -19,21 +19,25 @@ public class NewAccountRequest {
 	@JsonProperty("document_number")
 	private String documentNumber;
 
+	@JsonProperty("limit")
+	private Double limit;
+
 	public NewAccountRequest() {
 		super();
 	}
 
-	public NewAccountRequest(String documentNumber) {
+	public NewAccountRequest(String documentNumber, Double limit) {
 		super();
 		this.documentNumber = documentNumber;
+		this.limit = limit;		
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.documentNumber;
 	}
 
 	public Account asAccount() {
-		return new Account(documentNumber);
+		return new Account(documentNumber, limit);
 	}
 }

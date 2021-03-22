@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.exceptions.DependencyNotFoundException;
+import io.pismo.testback.exceptions.TransactionAmountGreaterThanLimitException;
 import io.pismo.testback.model.Transaction;
 import io.pismo.testback.services.transaction.CreateNewTransactionService;
 
@@ -136,5 +137,19 @@ public class TransactionsControllerTest {
 					.andReturn();
 		
 		verify(this.createNewTransactionService, times(0)).create(request);
+	}
+	
+	@Test
+	public void shouldReturnBadRequestWhenTransactionAmountIsGreaterThenAvailableLimit() throws Exception {
+		NewTransactionRequest request = new NewTransactionRequest(1L, 1L, 123.45);
+		when(createNewTransactionService.create(request)).thenThrow(TransactionAmountGreaterThanLimitException.class);		
+		
+		this.mockMvc.perform(post("/api/transactions").contentType(MediaType.APPLICATION_JSON_VALUE)
+												  .content(request.asJson()))
+					.andExpect(status().isBadRequest())
+					.andDo(print())
+					.andReturn();
+		
+		verify(this.createNewTransactionService, times(1)).create(request);
 	}
 }

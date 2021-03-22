@@ -9,6 +9,7 @@ import io.pismo.testback.model.Transaction;
  * @author victormartins
  *
  */
+
 public class TransactionResponse {
 	
 	private Long transactionId;

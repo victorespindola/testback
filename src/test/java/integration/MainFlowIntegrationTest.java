@@ -25,9 +25,11 @@ import io.pismo.testback.api.requests.account.NewAccountRequest;
 import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.api.responses.account.AccountResponse;
 import io.pismo.testback.api.responses.transaction.TransactionResponse;
+import io.pismo.testback.model.Account;
 import io.pismo.testback.model.operations.Credit;
 import io.pismo.testback.model.operations.Debit;
 import io.pismo.testback.model.operations.Operation;
+import io.pismo.testback.repositories.AccountsRepository;
 import io.pismo.testback.repositories.OperationsRepository;
 
 /**
@@ -56,6 +58,9 @@ public class MainFlowIntegrationTest {
 	@Autowired
 	OperationsRepository operationsRepository;
 	
+	@Autowired
+	AccountsRepository accountsRepository;
+	
 	private URI toURI(String uri) {
 		return URI.create(String.format("http://localhost:%d/api/%s", port, uri));
 	}
@@ -83,7 +88,7 @@ public class MainFlowIntegrationTest {
 	public void mainFlow() throws Exception {
 		
 		String documentNumber = "123456789";
-		ResponseEntity<AccountResponse> response = restTemplate.postForEntity(toURI("accounts"), new NewAccountRequest(documentNumber), AccountResponse.class);
+		ResponseEntity<AccountResponse> response = restTemplate.postForEntity(toURI("accounts"), new NewAccountRequest(documentNumber, 500.00), AccountResponse.class);
 		assertEquals(HttpStatus.CREATED, response.getStatusCode());
 		
 		AccountResponse accountCreated = restTemplate.getForObject(toURI(String.format("accounts/%d", response.getBody().getAccountId())), AccountResponse.class);
@@ -101,5 +106,29 @@ public class MainFlowIntegrationTest {
 		assertNotNull(responseNewTransactionDebit);
 		assertEquals(HttpStatus.CREATED, responseNewTransactionDebit.getStatusCode());
 		assertEquals(123.45, responseNewTransactionDebit.getBody().getAmount());
-	}	
+	}
+	
+	
+	@Test
+	public void shouldNotPermitATransactionWithAmountGreaterThenAvailableLimit() throws Exception {
+		
+		String documentNumber = "123456789";
+		Double limit = 100.00;
+		
+		ResponseEntity<AccountResponse> response = restTemplate.postForEntity(toURI("accounts"), new NewAccountRequest(documentNumber, limit), AccountResponse.class);
+		assertEquals(HttpStatus.CREATED, response.getStatusCode());
+		
+		AccountResponse accountCreated = restTemplate.getForObject(toURI(String.format("accounts/%d", response.getBody().getAccountId())), AccountResponse.class);
+		assertEquals(documentNumber, accountCreated.getDocumentNumber());
+		
+		Operation compraAVistaOperation = this.operationsRepository.findByDescription(COMPRA_A_VISTA);
+		
+		Double amount = 110.00;
+		ResponseEntity<String> responseNewTransactionCredit = restTemplate.postForEntity(toURI("transactions"), new NewTransactionRequest(response.getBody().getAccountId(), compraAVistaOperation.getId(), amount), String.class);
+		assertNotNull(responseNewTransactionCredit);
+		assertEquals(HttpStatus.BAD_REQUEST, responseNewTransactionCredit.getStatusCode());
+		
+		Account account = accountsRepository.findById(accountCreated.getAccountId()).get();
+		assertEquals(limit, account.getLimit());
+	}
 }

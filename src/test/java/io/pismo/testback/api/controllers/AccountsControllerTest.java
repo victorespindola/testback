@@ -76,20 +76,25 @@ public class AccountsControllerTest {
 	public void shouldCreateANewAccount() throws Exception {
 		Long accountId = 1L;
 		String document = "12345678900";
+		Double limit = 100.00;
 		
-		Account accountToSave = new Account(document);
+		Account accountToSave = new Account(document, limit);
 		Account accountWithId_1 = new Account(accountId, document);
 		when(accountsRepository.save(accountToSave)).thenReturn(accountWithId_1);
 		
 		this.mockMvc.perform(MockMvcRequestBuilders.post(String.format("/api/accounts"))
 												   .contentType(MediaType.APPLICATION_JSON)
-												   .content(toJson(new NewAccountRequest(document))))													
+												   .content(toJson(createNewAccountRequest(document, 500.00))))													
 					.andExpect(status().isCreated())
 					.andExpect(content().contentType(MediaType.APPLICATION_JSON))
-					.andExpect(content().json("{\"account_id\": 1, \"document_number\": \"12345678900\"}"))
+					.andExpect(content().json("{\"account_id\": 1, \"document_number\": \"12345678900\", \"limit\": 100.00}"))
 					.andReturn();
 		
 		verify(accountsRepository, times(1)).save(accountToSave);
+	}
+
+	private NewAccountRequest createNewAccountRequest(String document, Double limit) {
+		return new NewAccountRequest(document, limit);
 	}
 	
 	@Test
@@ -98,7 +103,7 @@ public class AccountsControllerTest {
 		
 		this.mockMvc.perform(MockMvcRequestBuilders.post(String.format("/api/accounts"))
 												   .contentType(MediaType.APPLICATION_JSON)
-												   .content(toJson(new NewAccountRequest(document))))													
+												   .content(toJson(createNewAccountRequest(document, 500.00))))													
 					.andExpect(status().isBadRequest())
 					.andDo(print())
 					.andReturn();

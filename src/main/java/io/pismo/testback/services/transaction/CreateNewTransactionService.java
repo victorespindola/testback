@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.exceptions.DependencyNotFoundException;
@@ -40,16 +41,23 @@ public class CreateNewTransactionService {
 				this.operationsRepository = operationsRepository;
 	}
 
+	@Transactional
 	public Transaction create(NewTransactionRequest request) {
 		LOGGER.info("Creating a new transaction...");
 		Optional<Account> account = accountsRepository.findById(request.getAccountId());
 		Optional<Operation> operation = operationsRepository.findById(request.getOperationTypeId());
 		
-		try {
-			return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount()));
+		if(account.isPresent()) {
+			Account realAccount = account.get();			
+			try {
+				this.accountsRepository.save(realAccount.updateLimit(request.getAmount() * operation.get().getFactor()));
+				return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount()));
+			}
+			catch (NoSuchElementException e) {
+				throw new DependencyNotFoundException(e);
+			}
 		}
-		catch (NoSuchElementException e) {
-			throw new DependencyNotFoundException(e);
-		}
+		
+		return null;
 	}
 }
