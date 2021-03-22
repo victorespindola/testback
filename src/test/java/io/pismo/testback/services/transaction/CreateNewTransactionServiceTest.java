@@ -1,8 +1,6 @@
-/**
- * 
- */
 package io.pismo.testback.services.transaction;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -10,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -104,4 +103,41 @@ public class CreateNewTransactionServiceTest {
 			fail();
 		});
 	}
+	
+	@Test
+	public void shouldUpdateTransactionsWhenNewDebitTransactionIsCreated() throws Exception {
+	
+		long accountId = 1L;
+		double amount = 60.0;
+		
+		Account account = new Account(accountId, "123456", 100.00);
+		
+		AccountsRepository accountsRepository = mock(AccountsRepository.class);
+		when(accountsRepository.findById(accountId)).thenReturn(Optional.of(account));
+
+		Operation operation = new Credit(1L, "Compra a vista");
+		Operation pagamento = new Debit(2L, "Pagamento");
+		
+		OperationsRepository operationsRepository = mock(OperationsRepository.class);
+		when(operationsRepository.findById(1L)).thenReturn(Optional.of(operation));
+		when(operationsRepository.findById(2L)).thenReturn(Optional.of(pagamento));
+		
+		TransactionsRepository transactionsRepository = mock(TransactionsRepository.class);
+		Transaction transaction1 = new Transaction(operation, account, 50.0);
+		Transaction transaction2 = new Transaction(operation, account, 23.5);
+		Transaction transaction3 = new Transaction(operation, account, 18.7);
+		when(transactionsRepository.findCreditsByAccountId(accountId)).thenReturn(Arrays.asList(transaction1, transaction2, transaction3));
+		
+		NewTransactionRequest request = new NewTransactionRequest(accountId, 2L, amount);
+		new CreateNewTransactionService(transactionsRepository, accountsRepository, operationsRepository).create(request);
+		
+		assertEquals(Double.valueOf(0.0), transaction1.getBalance());
+		assertEquals(Double.valueOf(-13.5), transaction2.getBalance());
+		assertEquals(Double.valueOf(-18.7), transaction3.getBalance());
+		
+		verify(transactionsRepository, times(1)).save(transaction1);
+		verify(transactionsRepository, times(1)).save(transaction2);
+		verify(transactionsRepository, times(0)).save(transaction3);
+		verify(transactionsRepository, times(1)).save(new Transaction(pagamento, account, amount, 0.0));
+	}	
 }

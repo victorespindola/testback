@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +27,13 @@ import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.api.responses.account.AccountResponse;
 import io.pismo.testback.api.responses.transaction.TransactionResponse;
 import io.pismo.testback.model.Account;
+import io.pismo.testback.model.Transaction;
 import io.pismo.testback.model.operations.Credit;
 import io.pismo.testback.model.operations.Debit;
 import io.pismo.testback.model.operations.Operation;
 import io.pismo.testback.repositories.AccountsRepository;
 import io.pismo.testback.repositories.OperationsRepository;
+import io.pismo.testback.repositories.TransactionsRepository;
 
 /**
  * @author victormartins
@@ -60,6 +63,9 @@ public class MainFlowIntegrationTest {
 	
 	@Autowired
 	AccountsRepository accountsRepository;
+
+	@Autowired
+	TransactionsRepository transactionsRepository;
 	
 	private URI toURI(String uri) {
 		return URI.create(String.format("http://localhost:%d/api/%s", port, uri));
@@ -130,5 +136,38 @@ public class MainFlowIntegrationTest {
 		
 		Account account = accountsRepository.findById(accountCreated.getAccountId()).get();
 		assertEquals(limit, account.getLimit());
+	}
+	
+	
+	@Test
+	public void shouldUpdateTransactionsWhenANewDebitTransactionIsCreated() throws Exception {
+		
+		String documentNumber = "123456789";
+		Double limit = 100.00;
+		
+		ResponseEntity<AccountResponse> response = restTemplate.postForEntity(toURI("accounts"), new NewAccountRequest(documentNumber, limit), AccountResponse.class);
+		assertEquals(HttpStatus.CREATED, response.getStatusCode());
+		
+		AccountResponse accountCreated = restTemplate.getForObject(toURI(String.format("accounts/%d", response.getBody().getAccountId())), AccountResponse.class);
+		assertEquals(documentNumber, accountCreated.getDocumentNumber());
+		
+		Operation compraAVistaOperation = this.operationsRepository.findByDescription(COMPRA_A_VISTA);
+		Operation pagamento = this.operationsRepository.findByDescription(PAGAMENTO);
+		
+		restTemplate.postForEntity(toURI("transactions"), new NewTransactionRequest(response.getBody().getAccountId(), compraAVistaOperation.getId(), 50.0), TransactionResponse.class);
+		restTemplate.postForEntity(toURI("transactions"), new NewTransactionRequest(response.getBody().getAccountId(), compraAVistaOperation.getId(), 23.5), TransactionResponse.class);
+		restTemplate.postForEntity(toURI("transactions"), new NewTransactionRequest(response.getBody().getAccountId(), compraAVistaOperation.getId(), 18.7), TransactionResponse.class);
+		
+		ResponseEntity<TransactionResponse> responseNewTransactionCredit = restTemplate.postForEntity(toURI("transactions"), new NewTransactionRequest(response.getBody().getAccountId(), pagamento.getId(), 60.0), TransactionResponse.class);
+		assertNotNull(responseNewTransactionCredit);
+		assertEquals(HttpStatus.CREATED, responseNewTransactionCredit.getStatusCode());
+		
+		Account account = accountsRepository.findById(accountCreated.getAccountId()).get();
+		assertEquals(Double.valueOf(67.8), account.getLimit());
+		
+		List<Transaction> accounts = this.transactionsRepository.findCreditsByAccountId(accountCreated.getAccountId());
+		assertEquals(Double.valueOf(0.0), accounts.get(0).getBalance());
+		assertEquals(Double.valueOf(-18.7), accounts.get(2).getBalance());
+		assertEquals(Double.valueOf(-13.5), accounts.get(1).getBalance());
 	}
 }

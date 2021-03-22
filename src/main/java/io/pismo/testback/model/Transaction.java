@@ -44,6 +44,9 @@ public class Transaction {
 	@Column(nullable = false, precision = 2)
 	private Double amount;
 	
+	@Column(nullable = false, precision = 2)
+	private Double balance;
+	
 	@CreationTimestamp
 	@Column(updatable = false, nullable = false)
 	private LocalDateTime eventTimestamp;
@@ -55,10 +58,15 @@ public class Transaction {
 	}
 
 	public Transaction(Operation operation, Account account, Double amount) {
+		this(operation, account, amount, amount);
+	}
+
+	public Transaction(Operation operation, Account account, Double amount, Double balance) {
 		super();
 		this.operation = operation;
 		this.account = account;
 		this.amount = amount * operation.getFactor();
+		this.balance = balance * operation.getFactor();
 	}
 
 	public Double getAmount() {
@@ -76,6 +84,7 @@ public class Transaction {
 				  						  .append(this.amount)
 				  						  .append(this.operation)
 				  						  .append(this.eventTimestamp)
+				  						  .append(this.balance)
 				  						  .toHashCode();
 	}
 
@@ -92,6 +101,7 @@ public class Transaction {
 								  .append(this.account, other.account)
 								  .append(this.amount, other.amount)
 								  .append(this.operation, other.operation)
+								  .append(this.balance, other.balance)
 								  .append(this.eventTimestamp, other.eventTimestamp)
 								  .isEquals();
 	}
@@ -103,6 +113,24 @@ public class Transaction {
 	public Long getAccountId() {
 		return Objects.nonNull(account) ? account.getId() : null;
 	}
-	
-	
+
+	/*
+	 * operationAmount > balance, return +
+	 * operationAmount <= balance, return 0
+	 */
+	public Double updateBalance(Double operationAmount) {		
+		
+		if(operationAmount > Math.abs(this.balance)) {
+			Double remainingAmount = operationAmount + this.balance;
+			this.balance = 0.0;
+			return remainingAmount;
+		}
+		
+		this.balance = operationAmount + this.balance;
+		return 0.0;
+	}
+
+	public Double getBalance() {
+		return this.balance;
+	}
 }

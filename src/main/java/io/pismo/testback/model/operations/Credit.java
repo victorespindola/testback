@@ -27,6 +27,10 @@ public class Credit extends Operation{
 		super(description);
 	}
 
+	public Credit(Long id, String description) {
+		super(id, description);
+	}
+
 	@Override
 	public Double getFactor() {
 		return -1.0;

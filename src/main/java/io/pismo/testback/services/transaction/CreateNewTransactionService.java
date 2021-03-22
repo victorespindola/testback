@@ -3,6 +3,7 @@
  */
 package io.pismo.testback.services.transaction;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -15,6 +16,7 @@ import io.pismo.testback.api.requests.transaction.NewTransactionRequest;
 import io.pismo.testback.exceptions.DependencyNotFoundException;
 import io.pismo.testback.model.Account;
 import io.pismo.testback.model.Transaction;
+import io.pismo.testback.model.operations.Debit;
 import io.pismo.testback.model.operations.Operation;
 import io.pismo.testback.repositories.AccountsRepository;
 import io.pismo.testback.repositories.OperationsRepository;
@@ -50,8 +52,19 @@ public class CreateNewTransactionService {
 		if(account.isPresent()) {
 			Account realAccount = account.get();			
 			try {
+				Operation realOperation = operation.get();
+				Double remainingAmount = request.getAmount();
+				if(realOperation instanceof Debit) {
+					List<Transaction> accounts = this.transactionsRepository.findCreditsByAccountId(realAccount.getId());
+					for (Transaction transaction : accounts) {
+						remainingAmount = transaction.updateBalance(remainingAmount);
+						this.transactionsRepository.save(transaction);
+						if(remainingAmount == 0.0) break;
+					}
+				}				
+				
 				this.accountsRepository.save(realAccount.updateLimit(request.getAmount() * operation.get().getFactor()));
-				return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount()));
+				return transactionsRepository.save(new Transaction(operation.get(), account.get(), request.getAmount(), remainingAmount));
 			}
 			catch (NoSuchElementException e) {
 				throw new DependencyNotFoundException(e);

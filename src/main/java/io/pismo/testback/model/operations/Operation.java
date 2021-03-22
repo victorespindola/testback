@@ -43,6 +43,12 @@ public abstract class Operation {
 		this.description = description;
 	}
 	
+	public Operation(Long id, String description) {
+		super();
+		this.id = id;
+		this.description = description;
+	}
+
 	public abstract Double getFactor();
 
 	public Long getId() {
